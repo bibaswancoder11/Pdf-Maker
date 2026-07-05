@@ -25,16 +25,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- React & ReactDOM CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- React & ReactDOM CDN (Removed crossorigin for full compatibility on local file:/// runners like HopWeb) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
     <!-- Babel Standalone CDN -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- PDF-Lib & Mammoth CDNs for 100% Client-Side PDF Creation -->
+    <!-- PDF-Lib, Mammoth & PDF.js CDNs for 100% Client-Side PDF Creation & Viewing -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 
     <style>
       body {
@@ -61,96 +62,253 @@
 
       // Inline SVGs to avoid CDN dependency bottlenecks for icons
       const Icons = {
-        ExternalLink: () => (
-          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        ExternalLink: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
           </svg>
         ),
-        Eye: () => (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        Eye: ({ className }) => (
+          <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         ),
-        FileText: () => (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        FileText: ({ className }) => (
+          <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
           </svg>
         ),
-        ImageIcon: () => (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        ImageIcon: ({ className }) => (
+          <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
           </svg>
         ),
-        Lock: () => (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        Lock: ({ className }) => (
+          <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
           </svg>
         ),
-        Unlock: () => (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        Unlock: ({ className }) => (
+          <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
           </svg>
         ),
-        KeyRound: () => (
-          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        KeyRound: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
           </svg>
         ),
-        FileDown: () => (
-          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        FileDown: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
           </svg>
         ),
-        UploadCloud: () => (
-          <svg className="w-12 h-12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+        UploadCloud: ({ className }) => (
+          <svg className={className || "w-12 h-12"} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
           </svg>
         ),
-        File: () => (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        File: ({ className }) => (
+          <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
           </svg>
         ),
-        X: () => (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        X: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         ),
         RefreshCw: ({ className }) => (
-          <svg className={className || "w-4.5 h-4.5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
           </svg>
         ),
-        CheckCircle: () => (
-          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        CheckCircle: ({ className }) => (
+          <svg className={className || "w-5 h-5 text-green-600"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         ),
-        AlertCircle: () => (
-          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        AlertCircle: ({ className }) => (
+          <svg className={className || "w-5 h-5 text-red-600"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
         ),
-        ArrowUp: () => (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        ArrowUp: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/>
           </svg>
         ),
-        ArrowDown: () => (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        ArrowDown: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
           </svg>
         ),
-        Share: () => (
-          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        Share: ({ className }) => (
+          <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186l5.572 3.285m-5.572-3.285L12.79 6.942m0 10.116a2.25 2.25 0 103.481-2.186m0 0L10.707 11.5m5.564-4.558a2.25 2.25 0 10-3.481-2.186m0 0L10.707 7.62" />
           </svg>
         )
       };
 
+      // Synchronous local utility to convert base64 data URLs directly to ArrayBuffers.
+      // This is crucial for offline/standalone runtimes like HopWeb where fetch("data:...") fails or is blocked.
+      const dataURLToArrayBuffer = (dataUrl) => {
+        const parts = dataUrl.split(',');
+        const base64 = parts[1];
+        const raw = window.atob(base64);
+        const rawLength = raw.length;
+        const array = new Uint8Array(new ArrayBuffer(rawLength));
+        for (let i = 0; i < rawLength; i++) {
+          array[i] = raw.charCodeAt(i);
+        }
+        return array.buffer;
+      };
+
+      // 100% Client-Side PDF Renderer utilizing PDF.js Canvas drawing.
+      // This solves iframe rendering blocks in Android WebViews (like HopWeb) and runs 100% offline.
+      const PdfViewer = ({ blob }) => {
+        const [numPages, setNumPages] = React.useState(0);
+        const [currentPage, setCurrentPage] = React.useState(1);
+        const [loading, setLoading] = React.useState(false);
+        const [pdfDoc, setPdfDoc] = React.useState(null);
+        const canvasRef = React.useRef(null);
+
+        React.useEffect(() => {
+          if (!blob) return;
+          setLoading(true);
+          let isMounted = true;
+
+          const loadPdf = async () => {
+            try {
+              const arrayBuffer = await blob.arrayBuffer();
+              const pdfjsLib = window['pdfjs-dist/build/pdf'];
+              pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+              
+              const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+              const pdf = await loadingTask.promise;
+              if (isMounted) {
+                setPdfDoc(pdf);
+                setNumPages(pdf.numPages);
+                setCurrentPage(1);
+                await renderPage(pdf, 1);
+              }
+            } catch (err) {
+              console.error('Error rendering PDF with pdf.js:', err);
+            } finally {
+              if (isMounted) setLoading(false);
+            }
+          };
+
+          loadPdf();
+          return () => { isMounted = false; };
+        }, [blob]);
+
+        const renderPage = async (pdf, pageNumber) => {
+          try {
+            const page = await pdf.getPage(pageNumber);
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const context = canvas.getContext('2d');
+            
+            const dpr = window.devicePixelRatio || 1;
+            const containerWidth = canvas.parentElement.clientWidth || 350;
+            const unscaledViewport = page.getViewport({ scale: 1 });
+            const scale = (containerWidth / unscaledViewport.width) * 0.96;
+            const viewport = page.getViewport({ scale: scale * dpr });
+            
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            canvas.style.width = `${viewport.width / dpr}px`;
+            canvas.style.height = `${viewport.height / dpr}px`;
+            
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+          } catch (err) {
+            console.error('Page render error:', err);
+          }
+        };
+
+        React.useEffect(() => {
+          if (pdfDoc) {
+            renderPage(pdfDoc, currentPage);
+          }
+        }, [currentPage, pdfDoc]);
+
+        React.useEffect(() => {
+          const handleResize = () => {
+            if (pdfDoc) {
+              renderPage(pdfDoc, currentPage);
+            }
+          };
+          window.addEventListener('resize', handleResize);
+          return () => window.removeEventListener('resize', handleResize);
+        }, [pdfDoc, currentPage]);
+
+        if (!blob) return null;
+
+        return (
+          <div className="flex flex-col items-center space-y-3 bg-neutral-100/50 p-4 rounded-xl border border-neutral-200">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-[350px] text-neutral-500 font-medium">
+                <Icons.RefreshCw className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
+                <span>Generating high-fidelity canvas view...</span>
+              </div>
+            ) : (
+              <>
+                <div className="w-full overflow-hidden flex justify-center bg-white rounded-lg shadow-sm border border-neutral-200 p-1">
+                  <canvas ref={canvasRef} className="max-w-full block" />
+                </div>
+                {numPages > 1 && (
+                  <div className="flex items-center justify-between w-full px-1 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-2.5 py-1.5 bg-white hover:bg-neutral-50 border border-neutral-300 rounded-lg text-xs font-semibold text-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      ← Prev
+                    </button>
+                    <span className="text-xs text-neutral-500 font-semibold font-mono">
+                      Page {currentPage} / {numPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, numPages))}
+                      disabled={currentPage === numPages}
+                      className="px-2.5 py-1.5 bg-white hover:bg-neutral-50 border border-neutral-300 rounded-lg text-xs font-semibold text-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      };
+
       function App() {
         const [activeTab, setActiveTab] = useState('images');
+        const [isServerAvailable, setIsServerAvailable] = useState(false);
+
+        // Check if server endpoints are operational (for stand-alone runners like HopWeb)
+        useEffect(() => {
+          fetch('/api/health')
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.status === 'ok') {
+                setIsServerAvailable(true);
+              }
+            })
+            .catch(() => {
+              setIsServerAvailable(false);
+              console.log('Running in local standalone/static client mode (e.g. HopWeb). Standard qpdf features will run in client compatibility fallback.');
+            });
+        }, []);
 
         // --- PDF Preview States ---
         const [previewUrl, setPreviewUrl] = useState('');
@@ -160,33 +318,35 @@
 
         // Helper to update preview state safely and scroll to it
         const updatePreview = async (blob, filename) => {
-          try {
-            // Try to upload the preview file to the server first
-            const formData = new FormData();
-            formData.append('pdf', blob, filename);
-
-            const response = await fetch('/api/upload-preview', {
-              method: 'POST',
-              body: formData,
-            });
-
-            if (!response.ok) {
-              throw new Error('Failed to create server-side preview.');
-            }
-
-            const data = await response.json();
-            // Server-side path bypassing sandbox constraints on nested iframe blob: URLs
-            const url = `/api/preview/${data.previewId}`;
-            setPreviewUrl(url);
-          } catch (err) {
-            console.warn('Falling back to local Blob URL for PDF preview due to error:', err);
-            // Fallback to local Blob URL if server preview fails
-            const url = URL.createObjectURL(blob);
-            setPreviewUrl(url);
-          }
-
           setPreviewFilename(filename);
           setPreviewBlob(blob);
+
+          if (isServerAvailable) {
+            try {
+              // Try to upload the preview file to the server first
+              const formData = new FormData();
+              formData.append('pdf', blob, filename);
+
+              const response = await fetch('/api/upload-preview', {
+                method: 'POST',
+                body: formData,
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                // Server-side path bypassing sandbox constraints on nested iframe blob: URLs
+                const url = `/api/preview/${data.previewId}`;
+                setPreviewUrl(url);
+                return;
+              }
+            } catch (err) {
+              console.warn('Falling back to local Blob URL for PDF preview:', err);
+            }
+          }
+
+          // Fallback to local Blob URL if offline or server preview is not available
+          const url = URL.createObjectURL(blob);
+          setPreviewUrl(url);
           
           // Smooth scroll to the preview section
           setTimeout(() => {
@@ -221,18 +381,22 @@
 
         // --- Image to PDF States ---
         const [imageFiles, setImageFiles] = useState([]);
-        const [imagePreviews, setImagePreviews] = useState([]);
         const [imageLayout, setImageLayout] = useState('fit');
+        const [imageCropRatio, setImageCropRatio] = useState('none');
         const [imagePassword, setImagePassword] = useState('');
         const [isImagesLoading, setIsImagesLoading] = useState(false);
         const [imagesError, setImagesError] = useState('');
         const [imagesSuccess, setImagesSuccess] = useState(false);
 
-        // Revoke Object URLs to avoid memory leaks
+        // Clean up preview URLs to avoid memory leaks
         useEffect(() => {
-          const urls = imageFiles.map(file => URL.createObjectURL(file));
-          setImagePreviews(urls);
-          return () => urls.forEach(url => URL.revokeObjectURL(url));
+          return () => {
+            imageFiles.forEach(file => {
+              if (file.previewUrl) {
+                URL.revokeObjectURL(file.previewUrl);
+              }
+            });
+          };
         }, [imageFiles]);
 
         // --- Document to PDF States ---
@@ -274,7 +438,76 @@
           setIsDragOver(false);
         };
 
-        const handleImageDrop = (e) => {
+        const processAndAddFiles = async (files) => {
+          const processed = [];
+          for (const file of files) {
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              const previewUrl = URL.createObjectURL(file);
+              processed.push({
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                arrayBuffer,
+                previewUrl
+              });
+            } catch (err) {
+              console.error('Error pre-reading image file:', err);
+              setImagesError(`Could not read file ${file.name}.`);
+            }
+          }
+          setImageFiles((prev) => [...prev, ...processed]);
+        };
+
+        const processAndSetDocFile = async (file) => {
+          try {
+            const fileType = file.name.split('.').pop().toLowerCase();
+            let textContent = '';
+            let arrayBuffer = null;
+
+            if (fileType === 'docx') {
+              arrayBuffer = await file.arrayBuffer();
+            } else if (['txt', 'md', 'csv', 'html', 'json'].includes(fileType)) {
+              textContent = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+              });
+            }
+
+            setDocFile({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              textContent,
+              arrayBuffer
+            });
+            setDocTitle(file.name.substring(0, file.name.lastIndexOf('.')));
+            setDocError('');
+          } catch (err) {
+            console.error('Error pre-reading document:', err);
+            setDocError(`Could not read file ${file.name}.`);
+          }
+        };
+
+        const processAndSetSecFile = async (file) => {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            setSecFile({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              arrayBuffer
+            });
+            setSecError('');
+          } catch (err) {
+            console.error('Error pre-reading security PDF:', err);
+            setSecError(`Could not read file ${file.name}.`);
+          }
+        };
+
+        const handleImageDrop = async (e) => {
           e.preventDefault();
           setIsDragOver(false);
           const files = Array.from(e.dataTransfer.files);
@@ -283,14 +516,14 @@
             imageExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
           );
           if (validImages.length > 0) {
-            setImageFiles((prev) => [...prev, ...validImages]);
+            await processAndAddFiles(validImages);
             setImagesError('');
           } else {
             setImagesError('Please drop valid image files (PNG, JPG, WebP, BMP, TIFF, GIF, SVG).');
           }
         };
 
-        const handleDocDrop = (e) => {
+        const handleDocDrop = async (e) => {
           e.preventDefault();
           setIsDragOver(false);
           const file = e.dataTransfer.files[0];
@@ -298,48 +531,41 @@
             const docExtensions = ['.txt', '.md', '.docx', '.csv'];
             const isValid = docExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
             if (isValid) {
-              setDocFile(file);
-              setDocTitle(file.name.substring(0, file.name.lastIndexOf('.')));
-              setDocError('');
+              await processAndSetDocFile(file);
             } else {
               setDocError('Unsupported file type. Please upload a .txt, .md, .csv or .docx file.');
             }
           }
         };
 
-        const handleSecDrop = (e) => {
+        const handleSecDrop = async (e) => {
           e.preventDefault();
           setIsDragOver(false);
           const file = e.dataTransfer.files[0];
           if (file && file.name.toLowerCase().endsWith('.pdf')) {
-            setSecFile(file);
-            setSecError('');
+            await processAndSetSecFile(file);
           } else {
             setSecError('Please drop a valid PDF file.');
           }
         };
 
         // --- File Input Handlers ---
-        const handleImageSelect = (e) => {
+        const handleImageSelect = async (e) => {
           if (e.target.files) {
-            setImageFiles((prev) => [...prev, ...Array.from(e.target.files)]);
+            await processAndAddFiles(Array.from(e.target.files));
             setImagesError('');
           }
         };
 
-        const handleDocSelect = (e) => {
+        const handleDocSelect = async (e) => {
           if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setDocFile(file);
-            setDocTitle(file.name.substring(0, file.name.lastIndexOf('.')));
-            setDocError('');
+            await processAndSetDocFile(e.target.files[0]);
           }
         };
 
-        const handleSecSelect = (e) => {
+        const handleSecSelect = async (e) => {
           if (e.target.files && e.target.files[0]) {
-            setSecFile(e.target.files[0]);
-            setSecError('');
+            await processAndSetSecFile(e.target.files[0]);
           }
         };
 
@@ -355,16 +581,33 @@
           setImageFiles(updated);
         };
 
-        // Helper to download Blob
-        const downloadBlob = (blob, filename) => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
+        // Helper to download Blob securely (handles fallback to url if blob is missing, making it 100% crash-safe)
+        const downloadBlob = async (blob, filename) => {
+          try {
+            let url;
+            let shouldRevoke = false;
+            if (blob) {
+              url = window.URL.createObjectURL(blob);
+              shouldRevoke = true;
+            } else if (previewUrl) {
+              url = previewUrl;
+            } else {
+              alert("No PDF content is ready for download.");
+              return;
+            }
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename || 'document.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            if (shouldRevoke) {
+              window.URL.revokeObjectURL(url);
+            }
+          } catch (err) {
+            console.error('Download failed:', err);
+            alert("Download failed. Please try 'Open in New Tab' to save or print.");
+          }
         };
 
         // --- Client-Side Submission Handlers ---
@@ -387,21 +630,103 @@
 
             for (const file of imageFiles) {
               let pdfImage;
-              const arrayBuffer = await file.arrayBuffer();
+              const arrayBuffer = file.arrayBuffer;
               const lowerName = file.name.toLowerCase();
 
-              try {
-                if (lowerName.endsWith('.png')) {
-                  pdfImage = await pdfDoc.embedPng(arrayBuffer);
-                } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
-                  pdfImage = await pdfDoc.embedJpg(arrayBuffer);
-                } else {
-                  // Fallback for non-standard browser images (WEBP, SVG, HEIC etc.)
+              // Crop to uniform aspect ratio if selected
+              if (imageCropRatio !== 'none') {
+                try {
+                  const blob = new Blob([arrayBuffer], { type: file.type || 'image/jpeg' });
                   const dataUrl = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = (e) => resolve(e.target.result);
                     reader.onerror = reject;
-                    reader.readAsDataURL(file);
+                    reader.readAsDataURL(blob);
+                  });
+
+                  const img = await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = reject;
+                    image.src = dataUrl;
+                  });
+
+                  let targetRatio = 1;
+                  if (imageCropRatio === '1:1') targetRatio = 1;
+                  else if (imageCropRatio === '4:3') targetRatio = 4 / 3;
+                  else if (imageCropRatio === '16:9') targetRatio = 16 / 9;
+                  else if (imageCropRatio === '3:2') targetRatio = 3 / 2;
+
+                  const originalRatio = img.width / img.height;
+                  let cropX = 0, cropY = 0, cropWidth = img.width, cropHeight = img.height;
+
+                  if (originalRatio > targetRatio) {
+                    cropHeight = img.height;
+                    cropWidth = img.height * targetRatio;
+                    cropX = (img.width - cropWidth) / 2;
+                  } else if (originalRatio < targetRatio) {
+                    cropWidth = img.width;
+                    cropHeight = img.width / targetRatio;
+                    cropY = (img.height - cropHeight) / 2;
+                  }
+
+                  const canvas = document.createElement('canvas');
+                  canvas.width = cropWidth;
+                  canvas.height = cropHeight;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+                  const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+                  const jpegBuffer = dataURLToArrayBuffer(jpegDataUrl);
+                  pdfImage = await pdfDoc.embedJpg(jpegBuffer);
+                } catch (cropErr) {
+                  console.warn(`Cropping failed for ${file.name}, falling back to uncropped:`, cropErr);
+                }
+              }
+
+              // Direct / standard embedding if not cropped or crop failed
+              if (!pdfImage) {
+                try {
+                  if (lowerName.endsWith('.png')) {
+                    pdfImage = await pdfDoc.embedPng(arrayBuffer);
+                  } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+                    pdfImage = await pdfDoc.embedJpg(arrayBuffer);
+                  } else {
+                    // Fallback for non-standard browser images (WEBP, SVG, HEIC etc.) using loaded ArrayBuffer to create safe memory Blob
+                    const blob = new Blob([arrayBuffer], { type: file.type });
+                    const dataUrl = await new Promise((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = (e) => resolve(e.target.result);
+                      reader.onerror = reject;
+                      reader.readAsDataURL(blob);
+                    });
+
+                    const img = await new Promise((resolve, reject) => {
+                      const image = new Image();
+                      image.onload = () => resolve(image);
+                      image.onerror = reject;
+                      image.src = dataUrl;
+                    });
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const jpegBuffer = dataURLToArrayBuffer(jpegDataUrl);
+                    pdfImage = await pdfDoc.embedJpg(jpegBuffer);
+                  }
+                } catch (embedError) {
+                  console.warn(`Direct embedding failed for ${file.name}, trying canvas conversion fallback:`, embedError);
+                  // Standard canvas fallback for any image parse errors using safe memory Blob
+                  const blob = new Blob([arrayBuffer], { type: file.type });
+                  const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
                   });
 
                   const img = await new Promise((resolve, reject) => {
@@ -418,37 +743,9 @@
                   ctx.drawImage(img, 0, 0);
 
                   const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                  const jpegResponse = await fetch(jpegDataUrl);
-                  const jpegBuffer = await jpegResponse.arrayBuffer();
+                  const jpegBuffer = dataURLToArrayBuffer(jpegDataUrl);
                   pdfImage = await pdfDoc.embedJpg(jpegBuffer);
                 }
-              } catch (embedError) {
-                console.warn(`Direct embedding failed for ${file.name}, trying canvas conversion fallback:`, embedError);
-                // Standard canvas fallback for any image parse errors
-                const dataUrl = await new Promise((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onload = (e) => resolve(e.target.result);
-                  reader.onerror = reject;
-                  reader.readAsDataURL(file);
-                });
-
-                const img = await new Promise((resolve, reject) => {
-                  const image = new Image();
-                  image.onload = () => resolve(image);
-                  image.onerror = reject;
-                  image.src = dataUrl;
-                });
-
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-
-                const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                const jpegResponse = await fetch(jpegDataUrl);
-                const jpegBuffer = await jpegResponse.arrayBuffer();
-                pdfImage = await pdfDoc.embedJpg(jpegBuffer);
               }
 
               // Default A4 size
@@ -499,6 +796,10 @@
 
             updatePreview(blob, 'images_converted.pdf');
             setImagesSuccess(true);
+            // Clean up old preview object URLs upon successful conversion
+            imageFiles.forEach(f => {
+              if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+            });
             setImageFiles([]);
             setImagePassword('');
           } catch (err) {
@@ -526,16 +827,11 @@
               if (!window.mammoth) {
                 throw new Error('Word Document parsing library is still loading. Please wait a moment.');
               }
-              const arrayBuffer = await docFile.arrayBuffer();
+              const arrayBuffer = docFile.arrayBuffer;
               const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
               contentText = result.value;
             } else if (['txt', 'md', 'csv', 'html', 'json'].includes(fileType)) {
-              contentText = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsText(docFile);
-              });
+              contentText = docFile.textContent;
 
               if (fileType === 'html') {
                 // Strip simple html tags
@@ -776,7 +1072,9 @@
           setSecSuccess(false);
 
           const formData = new FormData();
-          formData.append('pdf', secFile);
+          // Create Blob from preloaded arrayBuffer to avoid permission issues when browser serializes FormData!
+          const blob = new Blob([secFile.arrayBuffer], { type: secFile.type || 'application/pdf' });
+          formData.append('pdf', blob, secFile.name);
           formData.append('action', secAction);
           formData.append('password', secPassword);
           if (secAction === 'change') {
@@ -794,8 +1092,8 @@
               throw new Error(errData.error || 'Failed to process PDF security.');
             }
 
-            const blob = await response.blob();
-            updatePreview(blob, `${secFile.name.replace('.pdf', '')}_secured.pdf`);
+            const resultBlob = await response.blob();
+            updatePreview(resultBlob, `${secFile.name.replace('.pdf', '')}_secured.pdf`);
             setSecSuccess(true);
             setSecFile(null);
             setSecPassword('');
@@ -820,7 +1118,7 @@
                     <h1 id="app-title" className="font-sans font-semibold text-lg tracking-tight text-neutral-900 leading-none">
                       PDF Maker & Security Tool
                     </h1>
-                    <p className="text-[11px] text-neutral-400 font-mono mt-1.5 uppercase tracking-wider">v1.3 • Complete Native Bundle</p>
+                    <p className="text-[11px] text-neutral-400 font-mono mt-1.5 uppercase tracking-wider">v1.4 • Native WebView Optimized</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -844,8 +1142,9 @@
                   
                   <button
                     id="tab-images"
+                    type="button"
                     onClick={() => { setActiveTab('images'); }}
-                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all cursor-pointer ${
                       activeTab === 'images'
                         ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
                         : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
@@ -857,8 +1156,9 @@
 
                   <button
                     id="tab-documents"
+                    type="button"
                     onClick={() => { setActiveTab('documents'); }}
-                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all cursor-pointer ${
                       activeTab === 'documents'
                         ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
                         : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
@@ -870,8 +1170,9 @@
 
                   <button
                     id="tab-write"
+                    type="button"
                     onClick={() => { setActiveTab('write'); }}
-                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all cursor-pointer ${
                       activeTab === 'write'
                         ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
                         : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
@@ -887,8 +1188,9 @@
 
                   <button
                     id="tab-security"
+                    type="button"
                     onClick={() => { setActiveTab('security'); }}
-                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all cursor-pointer ${
                       activeTab === 'security'
                         ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
                         : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
@@ -918,19 +1220,17 @@
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleImageDrop}
-                        onClick={() => document.getElementById('image-input').click()}
-                        className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                          isDragOver
-                            ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
-                            : 'border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50'
+                        className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50 ${
+                          isDragOver ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]' : ''
                         }`}
                       >
+                        {/* Direct transparent overlay covering the entire dropzone to bypass programmatic .click() WebView blocks */}
                         <input
                           id="image-input"
                           type="file"
                           multiple
                           accept="image/*"
-                          className="hidden"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           onChange={handleImageSelect}
                         />
                         <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
@@ -948,8 +1248,9 @@
                               Arranged Images ({imageFiles.length})
                             </span>
                             <button
+                              type="button"
                               onClick={() => setImageFiles([])}
-                              className="text-xs text-red-600 hover:underline flex items-center space-x-1 font-medium"
+                              className="text-xs text-red-600 hover:underline flex items-center space-x-1 font-medium cursor-pointer"
                             >
                               <Icons.X />
                               <span>Clear All</span>
@@ -959,8 +1260,8 @@
                             {imageFiles.map((file, idx) => (
                               <div key={idx} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
                                 <div className="flex items-center space-x-3 overflow-hidden">
-                                  {imagePreviews[idx] ? (
-                                    <img src={imagePreviews[idx]} className="w-10 h-10 object-cover rounded-lg border border-neutral-200 shadow-xs" />
+                                  {file.previewUrl ? (
+                                    <img src={file.previewUrl} className="w-10 h-10 object-cover rounded-lg border border-neutral-200 shadow-xs" />
                                   ) : (
                                     <div className="w-10 h-10 bg-neutral-200 flex items-center justify-center rounded-lg text-neutral-400"><Icons.ImageIcon /></div>
                                   )}
@@ -972,24 +1273,27 @@
                                 
                                 <div className="flex items-center space-x-1.5 shrink-0">
                                   <button
+                                    type="button"
                                     onClick={() => moveImage(idx, 'up')}
                                     disabled={idx === 0}
                                     title="Move Up"
-                                    className={`p-1 rounded-md hover:bg-neutral-200 ${idx === 0 ? 'opacity-30 cursor-not-allowed' : 'text-neutral-600'}`}
+                                    className={`p-1 rounded-md hover:bg-neutral-200 cursor-pointer ${idx === 0 ? 'opacity-30 cursor-not-allowed' : 'text-neutral-600'}`}
                                   >
                                     <Icons.ArrowUp />
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => moveImage(idx, 'down')}
                                     disabled={idx === imageFiles.length - 1}
                                     title="Move Down"
-                                    className={`p-1 rounded-md hover:bg-neutral-200 ${idx === imageFiles.length - 1 ? 'opacity-30 cursor-not-allowed' : 'text-neutral-600'}`}
+                                    className={`p-1 rounded-md hover:bg-neutral-200 cursor-pointer ${idx === imageFiles.length - 1 ? 'opacity-30 cursor-not-allowed' : 'text-neutral-600'}`}
                                   >
                                     <Icons.ArrowDown />
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => setImageFiles((prev) => prev.filter((_, i) => i !== idx))}
-                                    className="text-neutral-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 ml-1"
+                                    className="text-neutral-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 ml-1 cursor-pointer"
                                   >
                                     <Icons.X />
                                   </button>
@@ -1001,7 +1305,7 @@
                       )}
 
                       {/* Options */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5 border-t border-neutral-100">
                         <div className="space-y-2">
                           <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Page Sizing & Fit</label>
                           <select
@@ -1010,9 +1314,25 @@
                             onChange={(e) => setImageLayout(e.target.value)}
                             className="w-full bg-white border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           >
-                            <option value="fit">Fit Page to Image Size (No margins, matches source orientation)</option>
-                            <option value="A4_portrait">Standard A4 Portrait (Centered with 15pt margins)</option>
-                            <option value="A4_landscape">Standard A4 Landscape (Centered with 15pt margins)</option>
+                            <option value="fit">Fit Page to Image Size (No margins)</option>
+                            <option value="A4_portrait">Standard A4 Portrait</option>
+                            <option value="A4_landscape">Standard A4 Landscape</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Crop Aspect Ratio</label>
+                          <select
+                            id="image-crop-ratio"
+                            value={imageCropRatio}
+                            onChange={(e) => setImageCropRatio(e.target.value)}
+                            className="w-full bg-white border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-neutral-800"
+                          >
+                            <option value="none">Original (No Cropping)</option>
+                            <option value="1:1">Square (1:1)</option>
+                            <option value="4:3">Standard (4:3)</option>
+                            <option value="16:9">Widescreen (16:9)</option>
+                            <option value="3:2">Classic (3:2)</option>
                           </select>
                         </div>
 
@@ -1053,9 +1373,10 @@
                       <div className="flex justify-end pt-5 border-t border-neutral-100">
                         <button
                           id="convert-images-btn"
+                          type="button"
                           onClick={handleImagesSubmit}
                           disabled={isImagesLoading || imageFiles.length === 0}
-                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all cursor-pointer ${
                             isImagesLoading || imageFiles.length === 0 ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
                           }`}
                         >
@@ -1091,18 +1412,16 @@
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDocDrop}
-                        onClick={() => document.getElementById('doc-input').click()}
-                        className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                          isDragOver
-                            ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
-                            : 'border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50'
+                        className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50 ${
+                          isDragOver ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]' : ''
                         }`}
                       >
+                        {/* Direct transparent overlay covering the entire dropzone to bypass programmatic .click() WebView blocks */}
                         <input
                           id="doc-input"
                           type="file"
                           accept=".txt,.md,.csv,.docx"
-                          className="hidden"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           onChange={handleDocSelect}
                         />
                         <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
@@ -1123,8 +1442,9 @@
                             </div>
                           </div>
                           <button
+                            type="button"
                             onClick={() => setDocFile(null)}
-                            className="text-neutral-400 hover:text-red-600 p-1.5 bg-white border border-neutral-200 rounded-lg hover:shadow-xs transition-all"
+                            className="text-neutral-400 hover:text-red-600 p-1.5 bg-white border border-neutral-200 rounded-lg hover:shadow-xs transition-all cursor-pointer"
                           >
                             <Icons.X />
                           </button>
@@ -1182,9 +1502,10 @@
                       <div className="flex justify-end pt-5 border-t border-neutral-100">
                         <button
                           id="convert-doc-btn"
+                          type="button"
                           onClick={handleDocSubmit}
                           disabled={isDocLoading || !docFile}
-                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all cursor-pointer ${
                             isDocLoading || !docFile ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
                           }`}
                         >
@@ -1326,9 +1647,10 @@
                       <div className="flex justify-end pt-5 border-t border-neutral-100">
                         <button
                           id="convert-write-btn"
+                          type="button"
                           onClick={handleWriteSubmit}
                           disabled={isWriteLoading || !writeText.trim()}
-                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all cursor-pointer ${
                             isWriteLoading || !writeText.trim() ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
                           }`}
                         >
@@ -1354,210 +1676,240 @@
                       <div>
                         <h2 className="text-xl font-semibold text-neutral-900">PDF Password Manager</h2>
                         <p className="text-sm text-neutral-500 mt-1">
-                          Protect confidential PDFs, change the existing owner passwords, or completely decrypt/remove password locks from existing files using industry-standard 256-bit AES protection.
+                          Apply native, standard password encryption, update security constraints, or safely decrypt/unlock existing PDFs.
                         </p>
                       </div>
 
-                      {/* Drop Zone */}
-                      <div
-                        id="sec-dropzone"
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleSecDrop}
-                        onClick={() => document.getElementById('sec-input').click()}
-                        className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                          isDragOver
-                            ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
-                            : 'border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50'
-                        }`}
-                      >
-                        <input
-                          id="sec-input"
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden"
-                          onChange={handleSecSelect}
-                        />
-                        <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
-                        <p className="text-sm font-medium text-neutral-700">
-                          Drag & drop your PDF here, or <span className="text-indigo-600 hover:underline">browse file</span>
-                        </p>
-                        <p className="text-xs text-neutral-400 mt-1.5 font-mono">Supports standard PDF files (.pdf)</p>
-                      </div>
-
-                      {/* File Details Card */}
-                      {secFile && (
-                        <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-center justify-between">
-                          <div className="flex items-center space-x-3 overflow-hidden">
-                            <span className="text-neutral-500 shrink-0"><Icons.File /></span>
-                            <div className="overflow-hidden">
-                              <p className="text-sm font-medium text-neutral-800 truncate">{secFile.name}</p>
-                              <p className="text-xs text-neutral-400 font-mono">{(secFile.size / 1024).toFixed(1)} KB</p>
+                      {!isServerAvailable ? (
+                        <div className="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-6 text-sm text-amber-900 space-y-4 shadow-xs animate-fade-in">
+                          <div className="flex items-center space-x-2.5 font-bold text-amber-950 text-base">
+                            <span className="text-xl">⚠️</span>
+                            <span>Security Engine Locked (Standalone/Offline Mode)</span>
+                          </div>
+                          <p className="leading-relaxed">
+                            Applying password protection, decryption, or owner privilege restrictions requires running a specialized CLI utility (<b>qpdf</b>) on a secure backend server.
+                          </p>
+                          <p className="leading-relaxed">
+                            Since you are running this app as a standalone local static page (inside <b>HopWeb</b> or via file:///), these server-side security actions are currently unavailable.
+                          </p>
+                          <div className="pt-2">
+                            <div className="bg-white/70 border border-amber-200/50 rounded-xl p-4 text-xs space-y-1.5 text-amber-950 font-medium font-sans">
+                              <p className="font-bold text-indigo-950">🎉 Features 100% available offline in HopWeb:</p>
+                              <ul className="list-disc list-inside space-y-1 pl-1 text-neutral-600 font-normal">
+                                <li><b className="text-neutral-800">Images to PDF Converter</b> (runs 100% locally)</li>
+                                <li><b className="text-neutral-800">Document to PDF Converter</b> (runs 100% locally)</li>
+                                <li><b className="text-neutral-800">Write Text to PDF</b> (runs 100% locally)</li>
+                              </ul>
                             </div>
                           </div>
-                          <button
-                            onClick={() => setSecFile(null)}
-                            className="text-neutral-400 hover:text-red-600 p-1.5 bg-white border border-neutral-200 rounded-lg hover:shadow-xs transition-all"
-                          >
-                            <Icons.X />
-                          </button>
                         </div>
-                      )}
-
-                      {/* Action selector */}
-                      <div className="space-y-2 pt-4 border-t border-neutral-100">
-                        <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Select Lock Action</label>
-                        <div className="grid grid-cols-3 gap-3">
-                          <button
-                            id="action-add"
-                            onClick={() => { setSecAction('add'); setSecError(''); }}
-                            className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all ${
-                              secAction === 'add'
-                                ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
-                                : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                      ) : (
+                        <>
+                          {/* Drop Zone */}
+                          <div
+                            id="sec-dropzone"
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleSecDrop}
+                            className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50 ${
+                              isDragOver ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]' : ''
                             }`}
                           >
-                            <Icons.Lock />
-                            <span className="text-xs">Add Password</span>
-                          </button>
-                          
-                          <button
-                            id="action-change"
-                            onClick={() => { setSecAction('change'); setSecError(''); }}
-                            className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all ${
-                              secAction === 'change'
-                                ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
-                                : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
-                            }`}
-                          >
-                            <Icons.RefreshCw className="w-4 h-4" />
-                            <span className="text-xs">Change Password</span>
-                          </button>
-                          
-                          <button
-                            id="action-delete"
-                            onClick={() => { setSecAction('delete'); setSecError(''); }}
-                            className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all ${
-                              secAction === 'delete'
-                                ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
-                                : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
-                            }`}
-                          >
-                            <Icons.Unlock />
-                            <span className="text-xs">Delete Password</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Password input fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
-                        <div className="space-y-2">
-                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                            {secAction === 'add' ? 'Desired Password' : 'Current Password'}
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                            {/* Direct transparent overlay covering the entire dropzone to bypass programmatic .click() WebView blocks */}
                             <input
-                              id="sec-password"
-                              type="password"
-                              value={secPassword}
-                              onChange={(e) => setSecPassword(e.target.value)}
-                              placeholder="••••••••"
-                              className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                              id="sec-input"
+                              type="file"
+                              accept="application/pdf"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onChange={handleSecSelect}
                             />
+                            <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
+                            <p className="text-sm font-medium text-neutral-700">
+                              Drag & drop your PDF here, or <span className="text-indigo-600 hover:underline">browse file</span>
+                            </p>
+                            <p className="text-xs text-neutral-400 mt-1.5 font-mono">Supports standard PDF files (.pdf)</p>
                           </div>
-                        </div>
 
-                        {secAction === 'change' && (
-                          <div className="space-y-2 animate-fade-in">
-                            <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">New Password</label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
-                              <input
-                                id="sec-new-password"
-                                type="password"
-                                value={secNewPassword}
-                                onChange={(e) => setSecNewPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                              />
+                          {/* File Details Card */}
+                          {secFile && (
+                            <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-center justify-between">
+                              <div className="flex items-center space-x-3 overflow-hidden">
+                                <span className="text-neutral-500 shrink-0"><Icons.File /></span>
+                                <div className="overflow-hidden">
+                                  <p className="text-sm font-medium text-neutral-800 truncate">{secFile.name}</p>
+                                  <p className="text-xs text-neutral-400 font-mono">{(secFile.size / 1024).toFixed(1)} KB</p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setSecFile(null)}
+                                className="text-neutral-400 hover:text-red-600 p-1.5 bg-white border border-neutral-200 rounded-lg hover:shadow-xs transition-all cursor-pointer"
+                              >
+                                <Icons.X />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Action selector */}
+                          <div className="space-y-2 pt-4 border-t border-neutral-100">
+                            <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Select Lock Action</label>
+                            <div className="grid grid-cols-3 gap-3">
+                              <button
+                                id="action-add"
+                                type="button"
+                                onClick={() => { setSecAction('add'); setSecError(''); }}
+                                className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all cursor-pointer ${
+                                  secAction === 'add'
+                                    ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
+                                    : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                                }`}
+                              >
+                                <Icons.Lock />
+                                <span className="text-xs">Add Password</span>
+                              </button>
+                              
+                              <button
+                                id="action-change"
+                                type="button"
+                                onClick={() => { setSecAction('change'); setSecError(''); }}
+                                className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all cursor-pointer ${
+                                  secAction === 'change'
+                                    ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
+                                    : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                                }`}
+                              >
+                                <Icons.RefreshCw className="w-4 h-4" />
+                                <span className="text-xs">Change Password</span>
+                              </button>
+                              
+                              <button
+                                id="action-delete"
+                                type="button"
+                                onClick={() => { setSecAction('delete'); setSecError(''); }}
+                                className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all cursor-pointer ${
+                                  secAction === 'delete'
+                                    ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
+                                    : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                                }`}
+                              >
+                                <Icons.Unlock />
+                                <span className="text-xs">Delete Password</span>
+                              </button>
                             </div>
                           </div>
-                        )}
-                      </div>
 
-                      {/* Notifications */}
-                      {secError && (
-                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start space-x-3">
-                          <span className="shrink-0 mt-0.5"><Icons.AlertCircle /></span>
-                          <span className="text-sm font-medium">{secError}</span>
-                        </div>
-                      )}
+                          {/* Password input fields */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
+                            <div className="space-y-2">
+                              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                                {secAction === 'add' ? 'Desired Password' : 'Current Password'}
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                                <input
+                                  id="sec-password"
+                                  type="password"
+                                  value={secPassword}
+                                  onChange={(e) => setSecPassword(e.target.value)}
+                                  placeholder="••••••••"
+                                  className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                />
+                              </div>
+                            </div>
 
-                      {secSuccess && (
-                        <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-start space-x-3">
-                          <span className="shrink-0 mt-0.5"><Icons.CheckCircle /></span>
-                          <span className="text-sm font-medium">Success! The security configuration has been applied. Preview it on the right or click download.</span>
-                        </div>
-                      )}
+                            {secAction === 'change' && (
+                              <div className="space-y-2 animate-fade-in">
+                                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">New Password</label>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                                  <input
+                                    id="sec-new-password"
+                                    type="password"
+                                    value={secNewPassword}
+                                    onChange={(e) => setSecNewPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
 
-                      {/* Convert Action */}
-                      <div className="flex justify-end pt-5 border-t border-neutral-100">
-                        <button
-                          id="convert-sec-btn"
-                          onClick={handleSecSubmit}
-                          disabled={isSecLoading || !secFile}
-                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
-                            isSecLoading || !secFile ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
-                          }`}
-                        >
-                          {isSecLoading ? (
-                            <>
-                              <Icons.RefreshCw className="w-4 h-4 animate-spin" />
-                              <span>Updating Permissions...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Icons.Lock />
-                              <span>Apply Lock Settings</span>
-                            </>
+                          {/* Notifications */}
+                          {secError && (
+                            <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start space-x-3">
+                              <span className="shrink-0 mt-0.5"><Icons.AlertCircle /></span>
+                              <span className="text-sm font-medium">{secError}</span>
+                            </div>
                           )}
-                        </button>
-                      </div>
+
+                          {secSuccess && (
+                            <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-start space-x-3">
+                              <span className="shrink-0 mt-0.5"><Icons.CheckCircle /></span>
+                              <span className="text-sm font-medium">Success! The security configuration has been applied. Preview it on the right or click download.</span>
+                            </div>
+                          )}
+
+                          {/* Convert Action */}
+                          <div className="flex justify-end pt-5 border-t border-neutral-100">
+                            <button
+                              id="convert-sec-btn"
+                              type="button"
+                              onClick={handleSecSubmit}
+                              disabled={isSecLoading || !secFile}
+                              className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all cursor-pointer ${
+                                isSecLoading || !secFile ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
+                              }`}
+                            >
+                              {isSecLoading ? (
+                                <>
+                                  <Icons.RefreshCw className="w-4 h-4 animate-spin" />
+                                  <span>Updating Permissions...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Icons.Lock />
+                                  <span>Apply Lock Settings</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
                 </div>
 
-                {/* PDF Preview Component (Displayed if active) */}
+                {/* Right PDF Preview Panel (Only active when preview file exists) */}
                 {previewUrl && (
-                  <div ref={previewRef} className="lg:col-span-5 bg-white border border-neutral-200/90 rounded-2xl shadow-sm overflow-hidden p-6 sm:p-8 animate-fade-in flex flex-col space-y-4">
-                    <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
-                      <div className="flex items-center space-x-2.5 min-w-0">
-                        <span className="text-indigo-600 shrink-0"><Icons.Eye /></span>
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-neutral-900 text-base leading-tight">PDF Live Preview</h3>
-                          <p className="text-xs text-neutral-400 font-mono truncate max-w-xs mt-0.5" title={previewFilename}>
-                            {previewFilename} {previewBlob ? `• ${(previewBlob.size / 1024).toFixed(1)} KB` : ''}
-                          </p>
-                        </div>
+                  <div ref={previewRef} className={`${previewUrl ? 'lg:col-span-5' : 'lg:col-span-1'} bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm space-y-5 animate-fade-in sticky top-20`}>
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                      <div>
+                        <h3 className="font-semibold text-neutral-900 text-sm">Output Document Preview</h3>
+                        <p className="text-[11px] text-neutral-400 font-mono truncate max-w-[180px]">{previewFilename}</p>
                       </div>
                       <button
+                        type="button"
                         onClick={clearPreview}
-                        className="text-neutral-400 hover:text-neutral-600 p-1.5 hover:bg-neutral-100 rounded-lg transition-all shrink-0 ml-2"
-                        title="Dismiss Preview"
+                        className="text-neutral-400 hover:text-neutral-600 p-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg transition-all cursor-pointer"
+                        title="Clear Preview"
                       >
                         <Icons.X />
                       </button>
                     </div>
 
-                    {/* PDF Preview Iframe */}
-                    <div className="relative border border-neutral-200/80 rounded-xl overflow-hidden bg-neutral-100/50 flex-1 min-h-[500px]">
-                      <iframe
-                        src={previewUrl}
-                        className="w-full h-[550px] border-none"
-                        title="PDF Viewer"
-                      />
+                    {/* PDF Preview Renderer using PDF.js or secure iframe depending on environment */}
+                    <div className="relative border border-neutral-200/80 rounded-xl overflow-hidden bg-neutral-100/50 flex-1 min-h-[450px]">
+                      {isServerAvailable ? (
+                        <iframe
+                          src={previewUrl}
+                          className="w-full h-[550px] border-none"
+                          title="PDF Viewer"
+                        />
+                      ) : (
+                        <PdfViewer blob={previewBlob} />
+                      )}
                     </div>
 
                     {/* HopWeb / Android WebView Compatibility Alert & Instructions */}
@@ -1573,54 +1925,75 @@
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-3 pt-4 border-t border-neutral-100">
-                      <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex flex-col gap-2 pt-3 border-t border-neutral-100">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <a
                           href={previewUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 px-4.5 py-2.5 rounded-xl border border-neutral-300 hover:bg-neutral-50 text-neutral-700 font-semibold text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs shrink-0"
+                          className="flex-1 px-2.5 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50 text-neutral-600 font-medium text-[11px] flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-xs shrink-0"
                         >
-                          <Icons.ExternalLink />
+                          <Icons.ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           <span>Open in New Tab</span>
                         </a>
 
                         <button
+                          type="button"
                           onClick={async () => {
                             try {
                               if (!previewBlob) {
-                                alert("No PDF content generated yet.");
                                 return;
                               }
                               
                               const file = new File([previewBlob], previewFilename, { type: 'application/pdf' });
                               
                               if (navigator.share) {
-                                await navigator.share({
-                                  files: [file],
-                                  title: previewFilename,
-                                  text: 'Here is your compiled PDF document',
-                                });
+                                // Try file sharing first if supported
+                                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                  await navigator.share({
+                                    files: [file],
+                                    title: previewFilename,
+                                    text: 'Here is your compiled PDF document',
+                                  });
+                                } else {
+                                  // Fallback to text/url sharing
+                                  await navigator.share({
+                                    title: previewFilename,
+                                    text: 'Here is your compiled PDF document',
+                                    url: window.location.href
+                                  });
+                                }
                               } else {
-                                alert("Sharing is not supported by this browser. Try 'Open in New Tab' to save/print.");
+                                alert("Sharing is not supported by this browser. Try 'Open in New Tab' or 'Download PDF' instead.");
                               }
                             } catch (shareErr) {
-                              console.error('Share action failed:', shareErr);
-                              alert("Share failed or was cancelled. Try 'Open in New Tab' to save/print.");
+                              const errStr = String(shareErr);
+                              const isCancel = 
+                                (shareErr && shareErr.name === 'AbortError') || 
+                                errStr.toLowerCase().includes('cancel') || 
+                                errStr.toLowerCase().includes('abort');
+                              
+                              if (isCancel) {
+                                console.log('Share action was cancelled by the user.');
+                              } else {
+                                console.warn('Share action did not complete:', shareErr);
+                                alert("Sharing failed. Please try 'Open in New Tab' or 'Download PDF' instead.");
+                              }
                             }
                           }}
-                          className="flex-1 px-4.5 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs shrink-0"
+                          className="flex-1 px-2.5 py-1 rounded-md border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-[11px] flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-xs shrink-0"
                         >
-                          <Icons.Share />
+                          <Icons.Share className="w-3.5 h-3.5 shrink-0" />
                           <span>Share / Save PDF</span>
                         </button>
                       </div>
 
                       <button
+                        type="button"
                         onClick={() => downloadBlob(previewBlob, previewFilename)}
-                        className="w-full px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center justify-center space-x-2.5 transition-all cursor-pointer shrink-0"
+                        className="w-full px-3 py-1.5 rounded-md font-medium text-[11px] text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center justify-center space-x-1.5 transition-all cursor-pointer shrink-0"
                       >
-                        <Icons.FileDown />
+                        <Icons.FileDown className="w-3.5 h-3.5 shrink-0" />
                         <span>Download PDF File</span>
                       </button>
                     </div>
