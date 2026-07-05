@@ -1,0 +1,6 @@
+{
+  "name": "PDF Maker & Security Tool",
+  "description": "A comprehensive PDF creator and password manager. Convert images of any extension, text, and documents to PDF, and easily add, change, or remove PDF password protection securely.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

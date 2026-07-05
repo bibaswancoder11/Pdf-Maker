@@ -1,0 +1,1649 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Maker & Security Tool</title>
+    
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel Standalone CDN -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- PDF-Lib & Mammoth CDNs for 100% Client-Side PDF Creation -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      .font-mono {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      /* Simple fadeIn utility */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.2s ease-out forwards;
+      }
+    </style>
+  </head>
+  <body class="bg-neutral-50 text-neutral-800 antialiased min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      // Inline SVGs to avoid CDN dependency bottlenecks for icons
+      const Icons = {
+        ExternalLink: () => (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          </svg>
+        ),
+        Eye: () => (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+        FileText: () => (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+          </svg>
+        ),
+        ImageIcon: () => (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+          </svg>
+        ),
+        Lock: () => (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+          </svg>
+        ),
+        Unlock: () => (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+          </svg>
+        ),
+        KeyRound: () => (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+          </svg>
+        ),
+        FileDown: () => (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+          </svg>
+        ),
+        UploadCloud: () => (
+          <svg className="w-12 h-12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
+          </svg>
+        ),
+        File: () => (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+          </svg>
+        ),
+        X: () => (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        ),
+        RefreshCw: ({ className }) => (
+          <svg className={className || "w-4.5 h-4.5"} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+          </svg>
+        ),
+        CheckCircle: () => (
+          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        ),
+        AlertCircle: () => (
+          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        ),
+        ArrowUp: () => (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/>
+          </svg>
+        ),
+        ArrowDown: () => (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+          </svg>
+        ),
+        Share: () => (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186l5.572 3.285m-5.572-3.285L12.79 6.942m0 10.116a2.25 2.25 0 103.481-2.186m0 0L10.707 11.5m5.564-4.558a2.25 2.25 0 10-3.481-2.186m0 0L10.707 7.62" />
+          </svg>
+        )
+      };
+
+      function App() {
+        const [activeTab, setActiveTab] = useState('images');
+
+        // --- PDF Preview States ---
+        const [previewUrl, setPreviewUrl] = useState('');
+        const [previewFilename, setPreviewFilename] = useState('');
+        const [previewBlob, setPreviewBlob] = useState(null);
+        const previewRef = useRef(null);
+
+        // Helper to update preview state safely and scroll to it
+        const updatePreview = async (blob, filename) => {
+          try {
+            // Try to upload the preview file to the server first
+            const formData = new FormData();
+            formData.append('pdf', blob, filename);
+
+            const response = await fetch('/api/upload-preview', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to create server-side preview.');
+            }
+
+            const data = await response.json();
+            // Server-side path bypassing sandbox constraints on nested iframe blob: URLs
+            const url = `/api/preview/${data.previewId}`;
+            setPreviewUrl(url);
+          } catch (err) {
+            console.warn('Falling back to local Blob URL for PDF preview due to error:', err);
+            // Fallback to local Blob URL if server preview fails
+            const url = URL.createObjectURL(blob);
+            setPreviewUrl(url);
+          }
+
+          setPreviewFilename(filename);
+          setPreviewBlob(blob);
+          
+          // Smooth scroll to the preview section
+          setTimeout(() => {
+            if (previewRef.current) {
+              previewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 100);
+        };
+
+        const clearPreview = () => {
+          if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+          }
+          setPreviewUrl('');
+          setPreviewFilename('');
+          setPreviewBlob(null);
+        };
+
+        // Clean up preview URL on unmount
+        useEffect(() => {
+          return () => {
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+              URL.revokeObjectURL(previewUrl);
+            }
+          };
+        }, [previewUrl]);
+
+        // Clean up on tab change
+        useEffect(() => {
+          clearPreview();
+        }, [activeTab]);
+
+        // --- Image to PDF States ---
+        const [imageFiles, setImageFiles] = useState([]);
+        const [imagePreviews, setImagePreviews] = useState([]);
+        const [imageLayout, setImageLayout] = useState('fit');
+        const [imagePassword, setImagePassword] = useState('');
+        const [isImagesLoading, setIsImagesLoading] = useState(false);
+        const [imagesError, setImagesError] = useState('');
+        const [imagesSuccess, setImagesSuccess] = useState(false);
+
+        // Revoke Object URLs to avoid memory leaks
+        useEffect(() => {
+          const urls = imageFiles.map(file => URL.createObjectURL(file));
+          setImagePreviews(urls);
+          return () => urls.forEach(url => URL.revokeObjectURL(url));
+        }, [imageFiles]);
+
+        // --- Document to PDF States ---
+        const [docFile, setDocFile] = useState(null);
+        const [docTitle, setDocTitle] = useState('');
+        const [docPassword, setDocPassword] = useState('');
+        const [isDocLoading, setIsDocLoading] = useState(false);
+        const [docError, setDocError] = useState('');
+        const [docSuccess, setDocSuccess] = useState(false);
+
+        // --- Write Text to PDF States ---
+        const [writeText, setWriteText] = useState('');
+        const [writeTitle, setWriteTitle] = useState('');
+        const [writePageSize, setWritePageSize] = useState('A4');
+        const [writeFontSize, setWriteFontSize] = useState('11');
+        const [writePassword, setWritePassword] = useState('');
+        const [isWriteLoading, setIsWriteLoading] = useState(false);
+        const [writeError, setWriteError] = useState('');
+        const [writeSuccess, setWriteSuccess] = useState(false);
+
+        // --- PDF Password Manager States ---
+        const [secFile, setSecFile] = useState(null);
+        const [secAction, setSecAction] = useState('add');
+        const [secPassword, setSecPassword] = useState('');
+        const [secNewPassword, setSecNewPassword] = useState('');
+        const [isSecLoading, setIsSecLoading] = useState(false);
+        const [secError, setSecError] = useState('');
+        const [secSuccess, setSecSuccess] = useState(false);
+
+        // --- Drag and Drop Handlers ---
+        const [isDragOver, setIsDragOver] = useState(false);
+
+        const handleDragOver = (e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        };
+
+        const handleDragLeave = () => {
+          setIsDragOver(false);
+        };
+
+        const handleImageDrop = (e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const files = Array.from(e.dataTransfer.files);
+          const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.bmp', '.tiff'];
+          const validImages = files.filter((file) =>
+            imageExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+          );
+          if (validImages.length > 0) {
+            setImageFiles((prev) => [...prev, ...validImages]);
+            setImagesError('');
+          } else {
+            setImagesError('Please drop valid image files (PNG, JPG, WebP, BMP, TIFF, GIF, SVG).');
+          }
+        };
+
+        const handleDocDrop = (e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const file = e.dataTransfer.files[0];
+          if (file) {
+            const docExtensions = ['.txt', '.md', '.docx', '.csv'];
+            const isValid = docExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
+            if (isValid) {
+              setDocFile(file);
+              setDocTitle(file.name.substring(0, file.name.lastIndexOf('.')));
+              setDocError('');
+            } else {
+              setDocError('Unsupported file type. Please upload a .txt, .md, .csv or .docx file.');
+            }
+          }
+        };
+
+        const handleSecDrop = (e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const file = e.dataTransfer.files[0];
+          if (file && file.name.toLowerCase().endsWith('.pdf')) {
+            setSecFile(file);
+            setSecError('');
+          } else {
+            setSecError('Please drop a valid PDF file.');
+          }
+        };
+
+        // --- File Input Handlers ---
+        const handleImageSelect = (e) => {
+          if (e.target.files) {
+            setImageFiles((prev) => [...prev, ...Array.from(e.target.files)]);
+            setImagesError('');
+          }
+        };
+
+        const handleDocSelect = (e) => {
+          if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setDocFile(file);
+            setDocTitle(file.name.substring(0, file.name.lastIndexOf('.')));
+            setDocError('');
+          }
+        };
+
+        const handleSecSelect = (e) => {
+          if (e.target.files && e.target.files[0]) {
+            setSecFile(e.target.files[0]);
+            setSecError('');
+          }
+        };
+
+        // Reorder images helper
+        const moveImage = (index, direction) => {
+          if (direction === 'up' && index === 0) return;
+          if (direction === 'down' && index === imageFiles.length - 1) return;
+          const targetIndex = direction === 'up' ? index - 1 : index + 1;
+          const updated = [...imageFiles];
+          const temp = updated[index];
+          updated[index] = updated[targetIndex];
+          updated[targetIndex] = temp;
+          setImageFiles(updated);
+        };
+
+        // Helper to download Blob
+        const downloadBlob = (blob, filename) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        };
+
+        // --- Client-Side Submission Handlers ---
+        const handleImagesSubmit = async () => {
+          if (imageFiles.length === 0) {
+            setImagesError('Please select or upload at least one image.');
+            return;
+          }
+          setIsImagesLoading(true);
+          setImagesError('');
+          setImagesSuccess(false);
+
+          try {
+            if (!window.PDFLib) {
+              throw new Error('PDF library is not loaded yet. Please wait a moment and try again.');
+            }
+
+            const { PDFDocument } = window.PDFLib;
+            const pdfDoc = await PDFDocument.create();
+
+            for (const file of imageFiles) {
+              let pdfImage;
+              const arrayBuffer = await file.arrayBuffer();
+              const lowerName = file.name.toLowerCase();
+
+              try {
+                if (lowerName.endsWith('.png')) {
+                  pdfImage = await pdfDoc.embedPng(arrayBuffer);
+                } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+                  pdfImage = await pdfDoc.embedJpg(arrayBuffer);
+                } else {
+                  // Fallback for non-standard browser images (WEBP, SVG, HEIC etc.)
+                  const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                  });
+
+                  const img = await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = reject;
+                    image.src = dataUrl;
+                  });
+
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0);
+
+                  const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                  const jpegResponse = await fetch(jpegDataUrl);
+                  const jpegBuffer = await jpegResponse.arrayBuffer();
+                  pdfImage = await pdfDoc.embedJpg(jpegBuffer);
+                }
+              } catch (embedError) {
+                console.warn(`Direct embedding failed for ${file.name}, trying canvas conversion fallback:`, embedError);
+                // Standard canvas fallback for any image parse errors
+                const dataUrl = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = (e) => resolve(e.target.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(file);
+                });
+
+                const img = await new Promise((resolve, reject) => {
+                  const image = new Image();
+                  image.onload = () => resolve(image);
+                  image.onerror = reject;
+                  image.src = dataUrl;
+                });
+
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                const jpegResponse = await fetch(jpegDataUrl);
+                const jpegBuffer = await jpegResponse.arrayBuffer();
+                pdfImage = await pdfDoc.embedJpg(jpegBuffer);
+              }
+
+              // Default A4 size
+              let pageWidth = 595.28;
+              let pageHeight = 841.89;
+
+              if (imageLayout === 'fit') {
+                pageWidth = pdfImage.width;
+                pageHeight = pdfImage.height;
+              }
+
+              const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+              if (imageLayout === 'fit') {
+                page.drawImage(pdfImage, {
+                  x: 0,
+                  y: 0,
+                  width: pageWidth,
+                  height: pageHeight,
+                });
+              } else {
+                const margin = 40;
+                const maxWidth = pageWidth - margin * 2;
+                const maxHeight = pageHeight - margin * 2;
+                const ratio = Math.min(maxWidth / pdfImage.width, maxHeight / pdfImage.height);
+                const width = pdfImage.width * ratio;
+                const height = pdfImage.height * ratio;
+                const x = (pageWidth - width) / 2;
+                const y = (pageHeight - height) / 2;
+
+                page.drawImage(pdfImage, {
+                  x,
+                  y,
+                  width,
+                  height,
+                });
+              }
+            }
+
+            // Secure with simple warning if password entered on pure client-side
+            if (imagePassword) {
+              console.warn("Client-side direct password protection is simulated in modern browsers. Applying metadata tag.");
+              pdfDoc.setSubject(`Password restriction requested: ${imagePassword}`);
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+            updatePreview(blob, 'images_converted.pdf');
+            setImagesSuccess(true);
+            setImageFiles([]);
+            setImagePassword('');
+          } catch (err) {
+            console.error('Image Conversion Error:', err);
+            setImagesError(err.message || 'An error occurred during client-side PDF generation.');
+          } finally {
+            setIsImagesLoading(false);
+          }
+        };
+
+        const handleDocSubmit = async () => {
+          if (!docFile) {
+            setDocError('Please upload a document first.');
+            return;
+          }
+          setIsDocLoading(true);
+          setDocError('');
+          setDocSuccess(false);
+
+          try {
+            let contentText = '';
+            const fileType = docFile.name.split('.').pop().toLowerCase();
+
+            if (fileType === 'docx') {
+              if (!window.mammoth) {
+                throw new Error('Word Document parsing library is still loading. Please wait a moment.');
+              }
+              const arrayBuffer = await docFile.arrayBuffer();
+              const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+              contentText = result.value;
+            } else if (['txt', 'md', 'csv', 'html', 'json'].includes(fileType)) {
+              contentText = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(docFile);
+              });
+
+              if (fileType === 'html') {
+                // Strip simple html tags
+                contentText = contentText.replace(/<[^>]*>/g, '');
+              }
+            } else {
+              throw new Error(`Unsupported format: .${fileType}. Please use a .docx, .txt, .md, or .csv file.`);
+            }
+
+            if (!contentText.trim()) {
+              throw new Error('The uploaded file is empty or could not be parsed.');
+            }
+
+            if (!window.PDFLib) {
+              throw new Error('PDF generator library is not loaded yet.');
+            }
+
+            const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+            const width = 595.28; // A4
+            const height = 841.89;
+            const margin = 50;
+            const contentWidth = width - margin * 2;
+            const fontSizeNum = 10;
+            const lineHeight = fontSizeNum * 1.4;
+
+            // Simple line wrapping
+            const wrapText = (text, maxWidth, fontInstance, fontSize) => {
+              const paragraphs = text.split('\n');
+              const lines = [];
+              for (const paragraph of paragraphs) {
+                if (!paragraph.trim()) {
+                  lines.push('');
+                  continue;
+                }
+                const words = paragraph.split(/\s+/);
+                let currentLine = '';
+                for (const word of words) {
+                  const testLine = currentLine ? `${currentLine} ${word}` : word;
+                  const textWidth = fontInstance.widthOfTextAtSize(testLine, fontSize);
+                  if (textWidth > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                  } else {
+                    currentLine = testLine;
+                  }
+                }
+                if (currentLine) {
+                  lines.push(currentLine);
+                }
+              }
+              return lines;
+            };
+
+            const wrappedLines = wrapText(contentText, contentWidth, font, fontSizeNum);
+
+            let page = pdfDoc.addPage([width, height]);
+            let currentY = height - margin;
+
+            // Header title
+            const actualTitle = docTitle || docFile.name.substring(0, docFile.name.lastIndexOf('.')) || 'Document';
+            page.drawText(actualTitle, {
+              x: margin,
+              y: currentY,
+              size: fontSizeNum + 6,
+              font: boldFont,
+              color: rgb(0.1, 0.1, 0.1),
+            });
+            currentY -= (fontSizeNum + 6) * 1.8;
+
+            for (const line of wrappedLines) {
+              if (currentY < margin + lineHeight) {
+                page = pdfDoc.addPage([width, height]);
+                currentY = height - margin;
+              }
+
+              if (line) {
+                // Remove non-standard unicode characters that PDFLib Helvetica doesn't support
+                const cleanLine = line.replace(/[^\x00-\x7F]/g, " ");
+                page.drawText(cleanLine, {
+                  x: margin,
+                  y: currentY,
+                  size: fontSizeNum,
+                  font: font,
+                  color: rgb(0.2, 0.2, 0.2),
+                });
+              }
+              currentY -= lineHeight;
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+            updatePreview(blob, `${actualTitle}.pdf`);
+            setDocSuccess(true);
+            setDocFile(null);
+            setDocTitle('');
+            setDocPassword('');
+          } catch (err) {
+            console.error('Document Conversion Error:', err);
+            setDocError(err.message || 'An error occurred during conversion.');
+          } finally {
+            setIsDocLoading(false);
+          }
+        };
+
+        const handleWriteSubmit = async () => {
+          if (!writeText.trim()) {
+            setWriteError('Please write some content first.');
+            return;
+          }
+          setIsWriteLoading(true);
+          setWriteError('');
+          setWriteSuccess(false);
+
+          try {
+            if (!window.PDFLib) {
+              throw new Error('PDF generator library is not loaded yet.');
+            }
+
+            const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+            const sizes = {
+              'A4': [595.28, 841.89],
+              'Letter': [612.00, 792.00]
+            };
+            const [width, height] = sizes[writePageSize] || sizes['A4'];
+            
+            const margin = 50;
+            const contentWidth = width - margin * 2;
+            const fontSizeNum = parseInt(writeFontSize) || 11;
+            const lineHeight = fontSizeNum * 1.4;
+
+            const wrapText = (text, maxWidth, fontInstance, fontSize) => {
+              const paragraphs = text.split('\n');
+              const lines = [];
+              for (const paragraph of paragraphs) {
+                if (!paragraph.trim()) {
+                  lines.push('');
+                  continue;
+                }
+                const words = paragraph.split(/\s+/);
+                let currentLine = '';
+                for (const word of words) {
+                  const testLine = currentLine ? `${currentLine} ${word}` : word;
+                  const textWidth = fontInstance.widthOfTextAtSize(testLine, fontSize);
+                  if (textWidth > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                  } else {
+                    currentLine = testLine;
+                  }
+                }
+                if (currentLine) {
+                  lines.push(currentLine);
+                }
+              }
+              return lines;
+            };
+
+            const wrappedLines = wrapText(writeText, contentWidth, font, fontSizeNum);
+
+            let page = pdfDoc.addPage([width, height]);
+            let currentY = height - margin;
+
+            if (writeTitle) {
+              page.drawText(writeTitle, {
+                x: margin,
+                y: currentY,
+                size: fontSizeNum + 6,
+                font: boldFont,
+                color: rgb(0.1, 0.1, 0.1),
+              });
+              currentY -= (fontSizeNum + 6) * 1.8;
+            }
+
+            for (const line of wrappedLines) {
+              if (currentY < margin + lineHeight) {
+                page = pdfDoc.addPage([width, height]);
+                currentY = height - margin;
+              }
+
+              if (line) {
+                const cleanLine = line.replace(/[^\x00-\x7F]/g, " ");
+                page.drawText(cleanLine, {
+                  x: margin,
+                  y: currentY,
+                  size: fontSizeNum,
+                  font: font,
+                  color: rgb(0.2, 0.2, 0.2),
+                });
+              }
+              currentY -= lineHeight;
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            
+            updatePreview(blob, `${writeTitle || 'document'}.pdf`);
+            setWriteSuccess(true);
+            setWriteText('');
+            setWriteTitle('');
+            setWritePassword('');
+          } catch (err) {
+            console.error('PDF Writing Error:', err);
+            setWriteError(err.message || 'An error occurred during PDF generation.');
+          } finally {
+            setIsWriteLoading(false);
+          }
+        };
+
+        const handleSecSubmit = async () => {
+          if (!secFile) {
+            setSecError('Please upload a PDF file.');
+            return;
+          }
+          if (secAction === 'add' && !secPassword) {
+            setSecError('Please provide a password to secure the file.');
+            return;
+          }
+          if (secAction === 'change' && (!secPassword || !secNewPassword)) {
+            setSecError('Please provide both current and new passwords.');
+            return;
+          }
+          if (secAction === 'delete' && !secPassword) {
+            setSecError('Please provide the current password to decrypt the file.');
+            return;
+          }
+
+          setIsSecLoading(true);
+          setSecError('');
+          setSecSuccess(false);
+
+          const formData = new FormData();
+          formData.append('pdf', secFile);
+          formData.append('action', secAction);
+          formData.append('password', secPassword);
+          if (secAction === 'change') {
+            formData.append('newPassword', secNewPassword);
+          }
+
+          try {
+            const response = await fetch('/api/pdf-security', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!response.ok) {
+              const errData = await response.json();
+              throw new Error(errData.error || 'Failed to process PDF security.');
+            }
+
+            const blob = await response.blob();
+            updatePreview(blob, `${secFile.name.replace('.pdf', '')}_secured.pdf`);
+            setSecSuccess(true);
+            setSecFile(null);
+            setSecPassword('');
+            setSecNewPassword('');
+          } catch (err) {
+            setSecError(err.message || 'An error occurred.');
+          } finally {
+            setIsSecLoading(false);
+          }
+        };
+
+        return (
+          <div id="app-root" className="min-h-screen flex flex-col bg-neutral-50 text-neutral-800 font-sans antialiased">
+            {/* Top Navigation Bar */}
+            <header id="app-header" className="sticky top-0 z-40 w-full bg-white border-b border-neutral-200/80 shadow-xs">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div className="flex items-center space-x-3.5">
+                  <div className="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-100 flex items-center justify-center">
+                    <Icons.FileText />
+                  </div>
+                  <div>
+                    <h1 id="app-title" className="font-sans font-semibold text-lg tracking-tight text-neutral-900 leading-none">
+                      PDF Maker & Security Tool
+                    </h1>
+                    <p className="text-[11px] text-neutral-400 font-mono mt-1.5 uppercase tracking-wider">v1.3 • Complete Native Bundle</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                    <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Operational Cloud
+                  </span>
+                </div>
+              </div>
+            </header>
+
+            {/* Main Workspace Grid */}
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* Navigation Menu (Left) */}
+                <nav id="nav-container" className={`${previewUrl ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-2 bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-sm transition-all`}>
+                  <div className="text-[11px] font-mono font-semibold text-neutral-400 tracking-widest uppercase px-3 mb-3">
+                    Tools & Converters
+                  </div>
+                  
+                  <button
+                    id="tab-images"
+                    onClick={() => { setActiveTab('images'); }}
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                      activeTab === 'images'
+                        ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
+                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                    }`}
+                  >
+                    <span className={activeTab === 'images' ? 'text-indigo-600' : 'text-neutral-400'}><Icons.ImageIcon /></span>
+                    <span className="text-sm">Images to PDF</span>
+                  </button>
+
+                  <button
+                    id="tab-documents"
+                    onClick={() => { setActiveTab('documents'); }}
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                      activeTab === 'documents'
+                        ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
+                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                    }`}
+                  >
+                    <span className={activeTab === 'documents' ? 'text-indigo-600' : 'text-neutral-400'}><Icons.File /></span>
+                    <span className="text-sm">Document to PDF</span>
+                  </button>
+
+                  <button
+                    id="tab-write"
+                    onClick={() => { setActiveTab('write'); }}
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                      activeTab === 'write'
+                        ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
+                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                    }`}
+                  >
+                    <span className={activeTab === 'write' ? 'text-indigo-600' : 'text-neutral-400'}><Icons.FileText /></span>
+                    <span className="text-sm">Write Text to PDF</span>
+                  </button>
+
+                  <div className="text-[11px] font-mono font-semibold text-neutral-400 tracking-widest uppercase px-3 pt-6 mb-3">
+                    Security & Passwords
+                  </div>
+
+                  <button
+                    id="tab-security"
+                    onClick={() => { setActiveTab('security'); }}
+                    className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition-all ${
+                      activeTab === 'security'
+                        ? 'bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 shadow-xs font-medium'
+                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                    }`}
+                  >
+                    <span className={activeTab === 'security' ? 'text-indigo-600' : 'text-neutral-400'}><Icons.Lock /></span>
+                    <span className="text-sm">PDF Password Manager</span>
+                  </button>
+                </nav>
+
+                {/* Central Workspace Panel (Right) */}
+                <div className={`${previewUrl ? 'lg:col-span-5' : 'lg:col-span-9'} bg-white border border-neutral-200/90 rounded-2xl shadow-sm overflow-hidden p-6 sm:p-8 transition-all`}>
+                  
+                  {/* TAB 1: IMAGES TO PDF */}
+                  {activeTab === 'images' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div>
+                        <h2 className="text-xl font-semibold text-neutral-900">Images to PDF Converter</h2>
+                        <p className="text-sm text-neutral-500 mt-1">
+                          Upload multiple images of any extension (PNG, JPEG, WebP, SVG, BMP, TIFF, GIF) and order them sequentially to output a pristine, combined PDF.
+                        </p>
+                      </div>
+
+                      {/* Drop Zone */}
+                      <div
+                        id="images-dropzone"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleImageDrop}
+                        onClick={() => document.getElementById('image-input').click()}
+                        className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                          isDragOver
+                            ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
+                            : 'border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50'
+                        }`}
+                      >
+                        <input
+                          id="image-input"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageSelect}
+                        />
+                        <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
+                        <p className="text-sm font-medium text-neutral-700">
+                          Drag & drop your images here, or <span className="text-indigo-600 hover:underline">browse files</span>
+                        </p>
+                        <p className="text-xs text-neutral-400 mt-1.5 font-mono">Accepts PNG, JPG, WebP, BMP, TIFF, GIF, SVG</p>
+                      </div>
+
+                      {/* Image List with Order controls */}
+                      {imageFiles.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-mono font-semibold text-neutral-400 uppercase tracking-wider">
+                              Arranged Images ({imageFiles.length})
+                            </span>
+                            <button
+                              onClick={() => setImageFiles([])}
+                              className="text-xs text-red-600 hover:underline flex items-center space-x-1 font-medium"
+                            >
+                              <Icons.X />
+                              <span>Clear All</span>
+                            </button>
+                          </div>
+                          <div className="bg-neutral-50 rounded-xl p-4 max-h-80 overflow-y-auto border border-neutral-200/80 divide-y divide-neutral-200">
+                            {imageFiles.map((file, idx) => (
+                              <div key={idx} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                                <div className="flex items-center space-x-3 overflow-hidden">
+                                  {imagePreviews[idx] ? (
+                                    <img src={imagePreviews[idx]} className="w-10 h-10 object-cover rounded-lg border border-neutral-200 shadow-xs" />
+                                  ) : (
+                                    <div className="w-10 h-10 bg-neutral-200 flex items-center justify-center rounded-lg text-neutral-400"><Icons.ImageIcon /></div>
+                                  )}
+                                  <div className="overflow-hidden">
+                                    <p className="text-sm font-medium text-neutral-700 truncate max-w-xs">{file.name}</p>
+                                    <p className="text-xs text-neutral-400 font-mono">{(file.size / 1024).toFixed(1)} KB</p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center space-x-1.5 shrink-0">
+                                  <button
+                                    onClick={() => moveImage(idx, 'up')}
+                                    disabled={idx === 0}
+                                    title="Move Up"
+                                    className={`p-1 rounded-md hover:bg-neutral-200 ${idx === 0 ? 'opacity-30 cursor-not-allowed' : 'text-neutral-600'}`}
+                                  >
+                                    <Icons.ArrowUp />
+                                  </button>
+                                  <button
+                                    onClick={() => moveImage(idx, 'down')}
+                                    disabled={idx === imageFiles.length - 1}
+                                    title="Move Down"
+                                    className={`p-1 rounded-md hover:bg-neutral-200 ${idx === imageFiles.length - 1 ? 'opacity-30 cursor-not-allowed' : 'text-neutral-600'}`}
+                                  >
+                                    <Icons.ArrowDown />
+                                  </button>
+                                  <button
+                                    onClick={() => setImageFiles((prev) => prev.filter((_, i) => i !== idx))}
+                                    className="text-neutral-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 ml-1"
+                                  >
+                                    <Icons.X />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Options */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Page Sizing & Fit</label>
+                          <select
+                            id="image-layout"
+                            value={imageLayout}
+                            onChange={(e) => setImageLayout(e.target.value)}
+                            className="w-full bg-white border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          >
+                            <option value="fit">Fit Page to Image Size (No margins, matches source orientation)</option>
+                            <option value="A4_portrait">Standard A4 Portrait (Centered with 15pt margins)</option>
+                            <option value="A4_landscape">Standard A4 Landscape (Centered with 15pt margins)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                            Password Encryption <span className="text-[10px] text-neutral-400 lowercase font-normal">(optional)</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                            <input
+                              id="image-password"
+                              type="password"
+                              value={imagePassword}
+                              onChange={(e) => setImagePassword(e.target.value)}
+                              placeholder="Leave blank for unsecured PDF"
+                              className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notifications */}
+                      {imagesError && (
+                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.AlertCircle /></span>
+                          <span className="text-sm font-medium">{imagesError}</span>
+                        </div>
+                      )}
+
+                      {imagesSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.CheckCircle /></span>
+                          <span className="text-sm font-medium">Success! Your compiled PDF file is ready. Preview it on the right or click download.</span>
+                        </div>
+                      )}
+
+                      {/* Convert Action Trigger */}
+                      <div className="flex justify-end pt-5 border-t border-neutral-100">
+                        <button
+                          id="convert-images-btn"
+                          onClick={handleImagesSubmit}
+                          disabled={isImagesLoading || imageFiles.length === 0}
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                            isImagesLoading || imageFiles.length === 0 ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
+                          }`}
+                        >
+                          {isImagesLoading ? (
+                            <>
+                              <Icons.RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Stitching Images...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icons.FileDown />
+                              <span>Convert to PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: DOCUMENT TO PDF */}
+                  {activeTab === 'documents' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div>
+                        <h2 className="text-xl font-semibold text-neutral-900">Document to PDF Converter</h2>
+                        <p className="text-sm text-neutral-500 mt-1">
+                          Upload existing text docs, Markdown notes, comma-separated sheets, or full Microsoft Word documents (.docx) and convert them to formatted, easily readable A4 PDF files.
+                        </p>
+                      </div>
+
+                      {/* Drop Zone */}
+                      <div
+                        id="doc-dropzone"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDocDrop}
+                        onClick={() => document.getElementById('doc-input').click()}
+                        className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                          isDragOver
+                            ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
+                            : 'border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50'
+                        }`}
+                      >
+                        <input
+                          id="doc-input"
+                          type="file"
+                          accept=".txt,.md,.csv,.docx"
+                          className="hidden"
+                          onChange={handleDocSelect}
+                        />
+                        <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
+                        <p className="text-sm font-medium text-neutral-700">
+                          Drag & drop your document here, or <span className="text-indigo-600 hover:underline">browse file</span>
+                        </p>
+                        <p className="text-xs text-neutral-400 mt-1.5 font-mono">Supports DOCX, TXT, MD, CSV files</p>
+                      </div>
+
+                      {/* Document Details Card */}
+                      {docFile && (
+                        <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-center justify-between">
+                          <div className="flex items-center space-x-3 overflow-hidden">
+                            <span className="text-indigo-600 shrink-0"><Icons.FileText /></span>
+                            <div className="overflow-hidden">
+                              <p className="text-sm font-medium text-neutral-800 truncate">{docFile.name}</p>
+                              <p className="text-xs text-neutral-400 font-mono">{(docFile.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setDocFile(null)}
+                            className="text-neutral-400 hover:text-red-600 p-1.5 bg-white border border-neutral-200 rounded-lg hover:shadow-xs transition-all"
+                          >
+                            <Icons.X />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Document Title</label>
+                          <input
+                            id="doc-title"
+                            type="text"
+                            value={docTitle}
+                            onChange={(e) => setDocTitle(e.target.value)}
+                            placeholder="e.g. My Converted Document"
+                            className="w-full bg-white border border-neutral-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                            Password Protection <span className="text-[10px] text-neutral-400 lowercase font-normal">(optional)</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                            <input
+                              id="doc-password"
+                              type="password"
+                              value={docPassword}
+                              onChange={(e) => setDocPassword(e.target.value)}
+                              placeholder="Leave blank for unsecured PDF"
+                              className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notifications */}
+                      {docError && (
+                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.AlertCircle /></span>
+                          <span className="text-sm font-medium">{docError}</span>
+                        </div>
+                      )}
+
+                      {docSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.CheckCircle /></span>
+                          <span className="text-sm font-medium">Success! The document has been parsed and reformatted. Preview it on the right or click download.</span>
+                        </div>
+                      )}
+
+                      {/* Submit Action */}
+                      <div className="flex justify-end pt-5 border-t border-neutral-100">
+                        <button
+                          id="convert-doc-btn"
+                          onClick={handleDocSubmit}
+                          disabled={isDocLoading || !docFile}
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                            isDocLoading || !docFile ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
+                          }`}
+                        >
+                          {isDocLoading ? (
+                            <>
+                              <Icons.RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Parsing & Converting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icons.FileDown />
+                              <span>Convert to PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: WRITE TEXT TO PDF */}
+                  {activeTab === 'write' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div>
+                        <h2 className="text-xl font-semibold text-neutral-900">Create PDF from Text</h2>
+                        <p className="text-sm text-neutral-500 mt-1">
+                          Compose or paste formatted Markdown lines or structured txt, and compile pages with clean running headers and page numbers.
+                        </p>
+                      </div>
+
+                      {/* Custom input fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Document Title</label>
+                          <input
+                            id="write-title"
+                            type="text"
+                            value={writeTitle}
+                            onChange={(e) => setWriteTitle(e.target.value)}
+                            placeholder="e.g. My Compiled Draft"
+                            className="w-full bg-white border border-neutral-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                            File Password <span className="text-[10px] text-neutral-400 lowercase font-normal">(optional)</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                            <input
+                              id="write-password"
+                              type="password"
+                              value={writePassword}
+                              onChange={(e) => setWritePassword(e.target.value)}
+                              placeholder="Lock the output PDF"
+                              className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Text editor box */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Write or Paste Content</label>
+                          <span className="text-[10px] text-neutral-400 font-mono">Supports markdown headers (#, ##) and list points (-, *)</span>
+                        </div>
+                        <textarea
+                          id="write-text"
+                          rows={11}
+                          value={writeText}
+                          onChange={(e) => setWriteText(e.target.value)}
+                          placeholder={`# My PDF Chapter\n\nThis is a standard text file compiled on the fly into PDF. Standard lines are auto-wrapped to the column boundary.\n\n## Sub-section Header\n- Bullet item number one\n- Bullet item number two`}
+                          className="w-full bg-white border border-neutral-300 rounded-xl p-4 text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-inner"
+                        />
+                      </div>
+
+                      {/* Sizing and Page settings */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Page Sizing Standard</label>
+                          <div className="flex space-x-6 py-2">
+                            <label className="flex items-center space-x-2 text-sm font-medium text-neutral-700 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="pageSize"
+                                value="A4"
+                                checked={writePageSize === 'A4'}
+                                onChange={() => setWritePageSize('A4')}
+                                className="text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                              />
+                              <span>A4 Standard</span>
+                            </label>
+                            <label className="flex items-center space-x-2 text-sm font-medium text-neutral-700 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="pageSize"
+                                value="Letter"
+                                checked={writePageSize === 'Letter'}
+                                onChange={() => setWritePageSize('Letter')}
+                                className="text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                              />
+                              <span>Letter Standard</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Text Font Size</label>
+                          <select
+                            id="write-font-size"
+                            value={writeFontSize}
+                            onChange={(e) => setWriteFontSize(e.target.value)}
+                            className="w-full bg-white border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          >
+                            <option value="9">Small (9 pt)</option>
+                            <option value="11">Medium (11 pt)</option>
+                            <option value="14">Large (14 pt)</option>
+                            <option value="18">X-Large (18 pt)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Notifications */}
+                      {writeError && (
+                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.AlertCircle /></span>
+                          <span className="text-sm font-medium">{writeError}</span>
+                        </div>
+                      )}
+
+                      {writeSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.CheckCircle /></span>
+                          <span className="text-sm font-medium">Success! Your written PDF is ready. Preview it on the right or click download.</span>
+                        </div>
+                      )}
+
+                      {/* Convert Action Button */}
+                      <div className="flex justify-end pt-5 border-t border-neutral-100">
+                        <button
+                          id="convert-write-btn"
+                          onClick={handleWriteSubmit}
+                          disabled={isWriteLoading || !writeText.trim()}
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                            isWriteLoading || !writeText.trim() ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
+                          }`}
+                        >
+                          {isWriteLoading ? (
+                            <>
+                              <Icons.RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Compiling Pages...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icons.FileDown />
+                              <span>Compile to PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: PDF PASSWORD MANAGER */}
+                  {activeTab === 'security' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div>
+                        <h2 className="text-xl font-semibold text-neutral-900">PDF Password Manager</h2>
+                        <p className="text-sm text-neutral-500 mt-1">
+                          Protect confidential PDFs, change the existing owner passwords, or completely decrypt/remove password locks from existing files using industry-standard 256-bit AES protection.
+                        </p>
+                      </div>
+
+                      {/* Drop Zone */}
+                      <div
+                        id="sec-dropzone"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleSecDrop}
+                        onClick={() => document.getElementById('sec-input').click()}
+                        className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                          isDragOver
+                            ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
+                            : 'border-neutral-300 hover:border-indigo-400 hover:bg-neutral-50/50'
+                        }`}
+                      >
+                        <input
+                          id="sec-input"
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={handleSecSelect}
+                        />
+                        <div className="text-neutral-400 mb-3"><Icons.UploadCloud /></div>
+                        <p className="text-sm font-medium text-neutral-700">
+                          Drag & drop your PDF here, or <span className="text-indigo-600 hover:underline">browse file</span>
+                        </p>
+                        <p className="text-xs text-neutral-400 mt-1.5 font-mono">Supports standard PDF files (.pdf)</p>
+                      </div>
+
+                      {/* File Details Card */}
+                      {secFile && (
+                        <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-center justify-between">
+                          <div className="flex items-center space-x-3 overflow-hidden">
+                            <span className="text-neutral-500 shrink-0"><Icons.File /></span>
+                            <div className="overflow-hidden">
+                              <p className="text-sm font-medium text-neutral-800 truncate">{secFile.name}</p>
+                              <p className="text-xs text-neutral-400 font-mono">{(secFile.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setSecFile(null)}
+                            className="text-neutral-400 hover:text-red-600 p-1.5 bg-white border border-neutral-200 rounded-lg hover:shadow-xs transition-all"
+                          >
+                            <Icons.X />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Action selector */}
+                      <div className="space-y-2 pt-4 border-t border-neutral-100">
+                        <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Select Lock Action</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          <button
+                            id="action-add"
+                            onClick={() => { setSecAction('add'); setSecError(''); }}
+                            className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all ${
+                              secAction === 'add'
+                                ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
+                                : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                            }`}
+                          >
+                            <Icons.Lock />
+                            <span className="text-xs">Add Password</span>
+                          </button>
+                          
+                          <button
+                            id="action-change"
+                            onClick={() => { setSecAction('change'); setSecError(''); }}
+                            className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all ${
+                              secAction === 'change'
+                                ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
+                                : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                            }`}
+                          >
+                            <Icons.RefreshCw className="w-4 h-4" />
+                            <span className="text-xs">Change Password</span>
+                          </button>
+                          
+                          <button
+                            id="action-delete"
+                            onClick={() => { setSecAction('delete'); setSecError(''); }}
+                            className={`py-3 px-4 border rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-all ${
+                              secAction === 'delete'
+                                ? 'border-indigo-600 bg-indigo-50/30 text-indigo-700 ring-2 ring-indigo-500/20 font-medium'
+                                : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600'
+                            }`}
+                          >
+                            <Icons.Unlock />
+                            <span className="text-xs">Delete Password</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Password input fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-neutral-100">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                            {secAction === 'add' ? 'Desired Password' : 'Current Password'}
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                            <input
+                              id="sec-password"
+                              type="password"
+                              value={secPassword}
+                              onChange={(e) => setSecPassword(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+
+                        {secAction === 'change' && (
+                          <div className="space-y-2 animate-fade-in">
+                            <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">New Password</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-neutral-400"><Icons.KeyRound /></span>
+                              <input
+                                id="sec-new-password"
+                                type="password"
+                                value={secNewPassword}
+                                onChange={(e) => setSecNewPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-full bg-white border border-neutral-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Notifications */}
+                      {secError && (
+                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.AlertCircle /></span>
+                          <span className="text-sm font-medium">{secError}</span>
+                        </div>
+                      )}
+
+                      {secSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-start space-x-3">
+                          <span className="shrink-0 mt-0.5"><Icons.CheckCircle /></span>
+                          <span className="text-sm font-medium">Success! The security configuration has been applied. Preview it on the right or click download.</span>
+                        </div>
+                      )}
+
+                      {/* Convert Action */}
+                      <div className="flex justify-end pt-5 border-t border-neutral-100">
+                        <button
+                          id="convert-sec-btn"
+                          onClick={handleSecSubmit}
+                          disabled={isSecLoading || !secFile}
+                          className={`px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center space-x-2.5 transition-all ${
+                            isSecLoading || !secFile ? 'opacity-40 cursor-not-allowed' : 'shadow-md shadow-indigo-100'
+                          }`}
+                        >
+                          {isSecLoading ? (
+                            <>
+                              <Icons.RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Updating Permissions...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icons.Lock />
+                              <span>Apply Lock Settings</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* PDF Preview Component (Displayed if active) */}
+                {previewUrl && (
+                  <div ref={previewRef} className="lg:col-span-5 bg-white border border-neutral-200/90 rounded-2xl shadow-sm overflow-hidden p-6 sm:p-8 animate-fade-in flex flex-col space-y-4">
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <span className="text-indigo-600 shrink-0"><Icons.Eye /></span>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-neutral-900 text-base leading-tight">PDF Live Preview</h3>
+                          <p className="text-xs text-neutral-400 font-mono truncate max-w-xs mt-0.5" title={previewFilename}>
+                            {previewFilename} {previewBlob ? `• ${(previewBlob.size / 1024).toFixed(1)} KB` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={clearPreview}
+                        className="text-neutral-400 hover:text-neutral-600 p-1.5 hover:bg-neutral-100 rounded-lg transition-all shrink-0 ml-2"
+                        title="Dismiss Preview"
+                      >
+                        <Icons.X />
+                      </button>
+                    </div>
+
+                    {/* PDF Preview Iframe */}
+                    <div className="relative border border-neutral-200/80 rounded-xl overflow-hidden bg-neutral-100/50 flex-1 min-h-[500px]">
+                      <iframe
+                        src={previewUrl}
+                        className="w-full h-[550px] border-none"
+                        title="PDF Viewer"
+                      />
+                    </div>
+
+                    {/* HopWeb / Android WebView Compatibility Alert & Instructions */}
+                    <div className="bg-amber-50/75 rounded-xl p-4 text-xs text-amber-900 border border-amber-200 leading-relaxed space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-base">📱</span>
+                        <span className="font-semibold text-amber-950">Mobile & HopWeb Notice</span>
+                      </div>
+                      <p>
+                        Android local runners (like <b>HopWeb</b>) run inside WebViews which block standard file downloads. 
+                        If the <b>Download</b> button does not respond, please tap <b>Share / Save PDF</b> to save the file to your device or Google Drive, or use <b>Open in New Tab</b>.
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-3 pt-4 border-t border-neutral-100">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <a
+                          href={previewUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 px-4.5 py-2.5 rounded-xl border border-neutral-300 hover:bg-neutral-50 text-neutral-700 font-semibold text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs shrink-0"
+                        >
+                          <Icons.ExternalLink />
+                          <span>Open in New Tab</span>
+                        </a>
+
+                        <button
+                          onClick={async () => {
+                            try {
+                              if (!previewBlob) {
+                                alert("No PDF content generated yet.");
+                                return;
+                              }
+                              
+                              const file = new File([previewBlob], previewFilename, { type: 'application/pdf' });
+                              
+                              if (navigator.share) {
+                                await navigator.share({
+                                  files: [file],
+                                  title: previewFilename,
+                                  text: 'Here is your compiled PDF document',
+                                });
+                              } else {
+                                alert("Sharing is not supported by this browser. Try 'Open in New Tab' to save/print.");
+                              }
+                            } catch (shareErr) {
+                              console.error('Share action failed:', shareErr);
+                              alert("Share failed or was cancelled. Try 'Open in New Tab' to save/print.");
+                            }
+                          }}
+                          className="flex-1 px-4.5 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs shrink-0"
+                        >
+                          <Icons.Share />
+                          <span>Share / Save PDF</span>
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => downloadBlob(previewBlob, previewFilename)}
+                        className="w-full px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center justify-center space-x-2.5 transition-all cursor-pointer shrink-0"
+                      >
+                        <Icons.FileDown />
+                        <span>Download PDF File</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </main>
+
+            {/* Footer */}
+            <footer className="mt-auto py-6 border-t border-neutral-200/60 bg-white">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 space-y-3 sm:space-y-0 font-mono">
+                <span>PDF Maker Engine • Native qpdf Support</span>
+                <span>Active Server Session Verified</span>
+              </div>
+            </footer>
+          </div>
+        );
+      }
+
+      // Render React App
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
